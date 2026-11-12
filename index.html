@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14298F">
+<title>Árvore de Decisão</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2314298F'/%3E%3Cpath d='M9 24v-7M15 24V10M21 24v-5' stroke='%23E9AC3F' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --azul:#14298F; --azul-medio:#3552C9; --azul-claro:#E4E9FA;
+  --ouro:#E9AC3F; --ouro-forte:#C98A12; --ouro-claro:#FCEFD3;
+  --fundo:#F1F4FB; --papel:#FFFFFF; --tinta:#0F1B4C; --suave:#56608F; --linha:#D3DAF0;
+  --erro:#8A3200;
+  --dock-h:150px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--fundo);color:var(--tinta);
+  font:400 17px/1.5 "Avenir Next","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent}
+img{max-width:100%}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--azul-medio);outline-offset:2px}
+main:focus{outline:none}
+
+/* ---------- topo ---------- */
+.topo{position:sticky;top:0;z-index:5;background:rgba(241,244,251,.95);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1px solid var(--linha)}
+.topo-in{max-width:560px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px}
+.logo-mini{width:44px;height:44px;border-radius:50%;flex:none;display:block;background:#fff}
+.identidade{flex:1;min-width:0}
+.identidade b{display:block;font-weight:800;font-size:16.5px;line-height:1.15;letter-spacing:-.01em}
+.identidade span{display:block;font-size:12px;line-height:1.25;color:var(--suave)}
+.barras{display:flex;align-items:flex-end;gap:4px;height:26px;flex:none}
+.barras i{display:block;width:8px;border-radius:2px 2px 0 0;background:var(--linha)}
+.barras i:nth-child(1){height:10px}
+.barras i:nth-child(2){height:15px}
+.barras i:nth-child(3){height:20px}
+.barras i:nth-child(4){height:26px}
+.barras i.feito{background:var(--ouro)}
+.barras i.atual{background:var(--azul)}
+
+/* ---------- conteúdo ---------- */
+main{max-width:560px;margin:0 auto;padding:22px 16px calc(var(--dock-h) + 28px)}
+h1,h2{margin:0}
+h1{font-size:clamp(32px,9.5vw,42px);line-height:1.05;letter-spacing:-.03em;font-weight:800}
+h1.t-passo{font-size:clamp(27px,7.6vw,32px);line-height:1.1;letter-spacing:-.025em;margin:0 0 8px}
+h2{font-size:21px;line-height:1.2;letter-spacing:-.015em;font-weight:800;margin:0 0 10px}
+h2.sub{font-size:18px;margin:26px 0 10px}
+.etapa{margin:0 0 4px;font-size:14.5px;font-weight:700;color:var(--suave)}
+.lead{margin:0 0 16px;color:var(--suave)}
+.contador{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--azul);min-height:1.5em}
+.nota{margin:8px 0 10px;font-size:14.5px;line-height:1.4;color:var(--suave)}
+
+/* ---------- capa ---------- */
+.capa{text-align:center}
+.logo-capa{display:block;width:min(56vw,208px);height:auto;aspect-ratio:1;border-radius:50%;margin:6px auto 20px;background:#fff}
+.capa .lead{max-width:34ch;margin-left:auto;margin-right:auto}
+.fatos{list-style:none;margin:0 0 6px;padding:0;text-align:left}
+.fatos li{display:flex;gap:10px;align-items:flex-start;padding:6px 0}
+.fatos .tique{margin-top:2px}
+
+.origem{display:flex;align-items:center;gap:12px;margin-top:30px;padding-top:16px;border-top:1px solid var(--linha);
+  text-align:left;font-size:13.5px;line-height:1.4;color:var(--suave)}
+.origem p{margin:0}
+.origem b{color:var(--tinta)}
+.logo-origem{width:56px;height:56px;border-radius:50%;flex:none;background:#fff}
+
+/* ---------- marcas de seleção ---------- */
+.tique{flex:none;width:22px;height:22px;border-radius:50%;background:var(--ouro);display:grid;place-items:center}
+.tique svg{width:12px;height:12px}
+
+.pills{display:flex;flex-wrap:wrap;gap:10px}
+.pills.col{flex-direction:column}
+.pill{appearance:none;-webkit-appearance:none;display:flex;align-items:center;gap:10px;min-height:50px;max-width:100%;
+  padding:10px 14px 10px 12px;border:2px solid var(--linha);border-radius:14px;background:var(--papel);
+  font-size:16px;line-height:1.25;text-align:left;cursor:pointer}
+.pill.larga{width:100%}
+.pill .tique{background:transparent;border:2px solid var(--linha)}
+.pill .tique svg{opacity:0}
+.pill[aria-pressed="true"],.pill[aria-checked="true"]{background:var(--azul);border-color:var(--azul);color:#fff}
+.pill[aria-pressed="true"] .tique,.pill[aria-checked="true"] .tique{background:var(--ouro);border-color:var(--ouro)}
+.pill[aria-pressed="true"] .tique svg,.pill[aria-checked="true"] .tique svg{opacity:1}
+
+/* ---------- escala de 1 a 5 ---------- */
+.item{background:var(--papel);border:1px solid var(--linha);border-left:5px solid var(--linha);
+  border-radius:16px;padding:14px 14px 12px;margin-bottom:12px}
+.item.ok{border-left-color:var(--ouro)}
+.item p{margin:0 0 12px;font-weight:600;line-height:1.35}
+.escala{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.escala button{appearance:none;-webkit-appearance:none;height:48px;border:2px solid var(--linha);border-radius:12px;
+  background:var(--papel);font-weight:800;font-size:18px;color:var(--azul);cursor:pointer}
+.escala button[aria-checked="true"]{background:var(--azul);border-color:var(--azul);color:#fff}
+.pontas{display:flex;justify-content:space-between;margin-top:6px;font-size:12.5px;color:var(--suave)}
+
+/* ---------- cálculo ---------- */
+.carregando{text-align:center;padding:40px 0}
+.gr{display:flex;align-items:flex-end;justify-content:center;gap:9px;height:92px;margin-bottom:24px}
+.gr i{display:block;width:18px;height:100%;border-radius:4px 4px 0 0;background:var(--azul);
+  transform-origin:bottom;transform:scaleY(.3);animation:cresce .9s ease-in-out infinite alternate}
+.gr i:nth-child(even){background:var(--ouro)}
+.gr i:nth-child(2){animation-delay:.12s}
+.gr i:nth-child(3){animation-delay:.24s}
+.gr i:nth-child(4){animation-delay:.36s}
+.gr i:nth-child(5){animation-delay:.48s}
+@keyframes cresce{to{transform:scaleY(1)}}
+
+/* ---------- resultado ---------- */
+.hero{background:var(--azul);color:#fff;border-radius:22px;padding:22px 18px 20px;margin:0 0 16px}
+.hero .peq{margin:0 0 6px;font-size:15px;opacity:.9}
+.hero h1{color:#fff;margin:0 0 10px;font-size:clamp(30px,8.6vw,38px)}
+.hero p{margin:0 0 16px;opacity:.95}
+.medidor{height:14px;border-radius:8px;background:rgba(255,255,255,.22);overflow:hidden}
+.medidor i{display:block;height:100%;border-radius:8px;background:var(--ouro)}
+.medidor-txt{display:flex;justify-content:space-between;margin-top:6px;font-size:14.5px}
+.hero .tambem{margin:16px 0 0;font-size:15px}
+.aviso{background:var(--ouro-claro);border-left:5px solid var(--ouro);border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:15.5px}
+.cartao{background:var(--papel);border:1px solid var(--linha);border-radius:20px;padding:18px 16px 14px;margin:0 0 16px}
+.cartao > p:last-child{margin-bottom:6px}
+
+.radar{display:block;width:100%;height:auto;margin:4px 0 6px}
+.anel{fill:none;stroke:var(--linha);stroke-width:1}
+.eixo{stroke:var(--linha);stroke-width:1}
+.poly-voce{fill:rgba(233,172,63,.38);stroke:var(--ouro-forte);stroke-width:2.5;stroke-linejoin:round}
+.poly-area{fill:none;stroke:var(--azul);stroke-width:2;stroke-dasharray:6 5;stroke-linejoin:round}
+.ponto{fill:var(--ouro-forte);stroke:#fff;stroke-width:1.5}
+.rot-radar{font-size:13.5px;font-weight:600;fill:var(--tinta)}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;margin:0 0 6px}
+.legenda span{display:inline-flex;align-items:center;gap:7px}
+.chave{display:inline-block;width:16px;height:16px;border-radius:4px}
+.chave.voce{background:rgba(233,172,63,.5);border:2px solid var(--ouro-forte)}
+.chave.area{border:2px dashed var(--azul)}
+
+details.area{border-top:1px solid var(--linha)}
+details.area:first-of-type{border-top:0}
+details.area summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:13px 0 12px}
+details.area summary::-webkit-details-marker{display:none}
+.area-nome{flex:1;min-width:0;font-weight:700;line-height:1.25;display:flex;align-items:center;gap:6px}
+.chev{flex:none;color:var(--suave);transition:transform .15s}
+details[open] .chev{transform:rotate(180deg)}
+.area-pct{font-weight:800}
+.area-barra{flex-basis:100%;height:10px;border-radius:6px;background:var(--azul-claro);overflow:hidden}
+.area-barra i{display:block;height:100%;border-radius:6px;background:var(--azul-medio)}
+details.area.top .area-barra i{background:var(--ouro)}
+.area-det{padding:0 0 14px}
+.area-det > p:first-child{margin:0 0 4px}
+.rot{margin:12px 0 4px;font-size:14px;font-weight:700;color:var(--suave)}
+.cursos{display:flex;flex-wrap:wrap;gap:6px}
+.curso{color:var(--tinta);background:var(--azul-claro);border-radius:8px;padding:5px 9px;font-size:14.5px;line-height:1.3}
+.curso.local{background:var(--ouro);color:var(--tinta);font-weight:700;display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px 7px}
+.afin{font-size:12.5px;font-weight:700;color:var(--suave);margin-left:6px}
+.curso.local .afin{margin-left:0}
+.curso.local .afin,.hero .afin{color:var(--tinta)}
+.turno{background:var(--tinta);color:#fff;font-size:12px;font-weight:600;border-radius:5px;padding:1px 7px;line-height:1.4}
+.selo{flex:none;background:var(--ouro);color:var(--tinta);font-size:11.5px;font-weight:800;border-radius:6px;padding:1px 7px;line-height:1.4}
+.hero-utfpr{margin:18px 0 0;padding-top:14px;border-top:1px solid rgba(255,255,255,.28)}
+.hero .hero-rot{margin:0 0 8px;font-size:14.5px;font-weight:700}
+.hero .hero-sem{margin:16px 0 0;font-size:14.5px}
+
+.passos{list-style:none;margin:0 0 6px;padding:0}
+.passos li{display:flex;gap:10px;align-items:flex-start;padding:7px 0}
+.passos .tique{margin-top:2px}
+
+.tipos{margin:6px 0 4px;padding-left:20px}
+.tipos li{margin:5px 0;line-height:1.4}
+.qr-img{width:min(100%,300px);margin:4px auto 14px;border:1px solid var(--linha);border-radius:12px;overflow:hidden;background:#fff}
+.qr-img svg{display:block;width:100%;height:auto}
+.qr-cartao > p{margin:0 0 10px}
+.qr-texto{margin:0 0 6px}
+.qr-texto summary{cursor:pointer;font-weight:700;color:var(--azul);padding:6px 0}
+.qr-texto pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 0;padding:10px 12px;border-radius:10px;
+  background:var(--fundo);font:14px/1.45 ui-monospace,Menlo,Consolas,monospace}
+.acoes-res{display:flex;flex-direction:column;gap:10px;margin:4px 0 0}
+.acoes-res .btn-primario,.acoes-res .btn-sec{width:100%}
+
+/* ---------- botões e dock ---------- */
+.btn-primario,.btn-sec{appearance:none;-webkit-appearance:none;height:52px;border-radius:14px;font-weight:800;font-size:17px;cursor:pointer}
+.btn-primario{flex:1;border:0;background:var(--ouro);color:var(--tinta)}
+.btn-sec{padding:0 20px;border:2px solid var(--linha);background:var(--papel);color:var(--azul)}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--papel);
+  border-top:1px solid var(--linha);box-shadow:0 -8px 22px rgba(15,27,76,.09)}
+.dock-in{max-width:560px;margin:0 auto}
+.dock-msg{display:none;margin:0;padding:10px 16px 0;font-size:14.5px;font-weight:700;color:var(--erro)}
+.acoes{display:flex;gap:10px;padding:10px 16px 10px}
+.faixa{appearance:none;-webkit-appearance:none;display:flex;align-items:center;gap:12px;width:100%;min-height:60px;
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));border:0;background:var(--azul);color:#fff;text-align:left;cursor:pointer}
+.faixa:focus-visible{outline-color:var(--ouro);outline-offset:-4px}
+.faixa .ico{flex:none;width:36px;height:36px;border-radius:50%;background:var(--ouro);display:grid;place-items:center}
+.faixa strong{display:block;font-size:15px;line-height:1.2;font-weight:800}
+.faixa small{display:block;margin-top:2px;font-size:13px;line-height:1.25;opacity:.88}
+
+/* ---------- folha (Ciência de Dados e IA) ---------- */
+dialog#folha{width:min(560px,100%);max-width:100%;max-height:90vh;max-height:90dvh;margin:auto auto 0;padding:0;border:0;
+  border-radius:22px 22px 0 0;background:var(--papel);color:var(--tinta);overflow:hidden}
+dialog#folha[open]{display:flex;flex-direction:column;animation:sobe .22s ease-out}
+dialog#folha::backdrop{background:rgba(15,27,76,.6)}
+@keyframes sobe{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+.folha-topo{display:flex;align-items:center;gap:12px;padding:16px 18px 14px;border-bottom:1px solid var(--linha);flex:none}
+.folha-topo .logo-mini{width:48px;height:48px}
+.folha-topo p{margin:0;font-size:13.5px;color:var(--suave);line-height:1.25}
+.folha-topo h2{font-size:17px;margin:2px 0 0}
+.folha-corpo{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:16px 18px 6px}
+.folha-corpo h3{margin:0 0 8px;font-size:23px;line-height:1.15;letter-spacing:-.02em;font-weight:800}
+.folha-corpo p{margin:0 0 12px}
+.folha-pe{flex:none;padding:12px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--linha)}
+.folha-pe .btn-primario{width:100%}
+.passos-dados{list-style:none;margin:16px 0 0;padding:0;counter-reset:passo}
+.passos-dados > li{position:relative;counter-increment:passo;padding:0 0 6px 42px;margin-bottom:8px}
+.passos-dados > li::before{content:counter(passo);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;
+  background:var(--ouro);color:var(--tinta);font-weight:800;display:grid;place-items:center}
+.folha-corpo h4{margin:2px 0 6px;font-size:17.5px;line-height:1.25;font-weight:800;letter-spacing:-.01em}
+.termo{background:var(--ouro-claro);border-left:5px solid var(--ouro);border-radius:10px;padding:10px 12px;margin:14px 0;font-size:15.5px}
+.vet{width:100%;border-collapse:collapse;margin:4px 0 14px;font-size:14.5px}
+.vet caption{text-align:left;font-weight:700;color:var(--suave);padding-bottom:6px}
+.vet th{text-align:left;font-weight:500;padding:4px 8px 4px 0;white-space:nowrap}
+.vet td{padding:4px 0}
+.vet .mini{display:block;height:8px;border-radius:5px;background:var(--azul-claro);overflow:hidden}
+.vet .mini i{display:block;height:100%;background:var(--azul-medio)}
+.vet .num{text-align:right;font-weight:700;padding-left:8px;width:44px}
+
+/* ---------- movimento reduzido e impressão ---------- */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .gr i{transform:none}
+}
+@media print{
+  @page{margin:12mm}
+  body{background:#fff}
+  .dock,.acoes-res,.barras,dialog{display:none!important}
+  .topo{position:static;background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
+  main{padding-bottom:0}
+  .hero,.cartao,details.area{break-inside:avoid}
+  .qr-texto pre{white-space:pre-wrap}
+  body{font-size:13.5px;line-height:1.4}
+  main{max-width:none;padding:6px 0 0}
+  .topo-in{max-width:none;padding:0 0 8px}
+  .hero{padding:16px}
+  .hero h1{font-size:28px}
+  h2{font-size:17px}
+  .cartao{padding:14px 14px 8px;margin-bottom:12px}
+  .radar{max-width:400px;margin-left:auto;margin-right:auto}
+  .qr-img{width:180px}
+  .nota,.curso,.legenda{font-size:12px}
+  .chev{display:none}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="topo-in">
+    <img class="logo-mini" data-logo alt="Logo do curso de Ciência de Dados e Inteligência Artificial, UTFPR Campus Londrina">
+    <div class="identidade"><b>Árvore de Decisão</b><span>Curso de Ciência de Dados e IA, UTFPR Londrina</span></div>
+    <div class="barras" id="barras" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
+</header>
+
+<main id="tela" tabindex="-1"></main>
+
+<div class="dock" id="dock">
+  <div class="dock-in">
+    <p class="dock-msg" id="msg" role="alert"></p>
+    <div class="acoes" id="acoes"></div>
+    <button type="button" class="faixa" id="faixa" aria-haspopup="dialog">
+      <span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 19v-6M10 19V8M15 19v-4M20 19V5" fill="none" stroke="#14298F" stroke-width="3" stroke-linecap="round"/></svg></span>
+      <span><strong>O que Dados e IA têm a ver com isso?</strong><small>Toque para entender como o teste funciona</small></span>
+    </button>
+  </div>
+</div>
+
+<dialog id="folha" aria-labelledby="folhaTitulo2">
+  <div class="folha-topo">
+    <img class="logo-mini" data-logo alt="Logo do curso de Ciência de Dados e Inteligência Artificial, UTFPR Campus Londrina">
+    <div><p>Como este teste funciona</p><h2 id="folhaTitulo">Ciência de Dados e IA por trás deste teste</h2></div>
+  </div>
+  <div class="folha-corpo"><h3 id="folhaTitulo2"></h3><div id="folhaCorpo"></div></div>
+  <div class="folha-pe"><button type="button" class="btn-primario" id="folhaFechar">Entendi, voltar ao teste</button></div>
+</dialog>
+
+<noscript><p style="padding:24px;font-size:18px">Este aplicativo precisa de JavaScript ativado no navegador.</p></noscript>
+
+<script>
+var LOGO_URI = "data:image/jpeg;base64,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9f2rv/HULnGzVWCO2ZyZINzvzN7eI+upWfNw4gLxjZl4bj2damZFibDkFBkFvFTRSdR0kid8aM+gj8/issuqhmZMwSRm7ToVTvY5ji1wsQiIi2rFERERERERERERERERERERERERERERERN0RFoGqmq2P6WYkbldX+UV027aK3Rv2kqXj+iwdOZ3h6yQF+mqWp9i0uwuS9XRwnqpN46KgY7aSqk27h6GjoXO8B6yAaqae6f5dxF6lVGb5vVTMsUcvJNMzdgkDe6lpx8lo8XeG573FWuH0DZGmpqTsxN8SeAUWectPNx5uPkvjD8HzviV1Emy/L66alsMUnZyVLG7Na0HfyalaenTxd127zu7oro41jNjxLGqaw4/boaGgpm8scMY+dxPe5x7y49SV2rTabfY7NTWm00cNHRU0Yihp4W8rI2juAC7y11+IuqyGgbLBo3h+6ygpxFmcydSiIirlIRERERERERERERERERERERERERERERERERERERERERERERERERERERERETYFdWtoaS4UUlJWQMmhkGzmOHf/wCPSu0ixewPBa4XBXoJBuFDt4sl3wW9Mu1pme+kLthIeuwPyJB4j1/nUiYxk1Hkdu7WI9nURj7NAT1YfSPSD4FZmpp4qqlkgnibLG9pa5jxuHA+BUSX+w3LCb3HerM9/knN5ru/s9/kP9LT4H865KaCXApDPTgugJ6TfZ6x1fR4i6ZIzEW83LlKNDx6ipgRYPGcko8itXlMJEc7NhNBv1Yfzg+BWc711NPPHURtliN2nQqnkjdG4seLEIiItywRERERERERERERERERERERERERa3nGZ2TAsMrckv8AUmGlpm9Gt+PM8/FjYPFzj0HznoCs7W1lPQUM1ZVzxwU8LHSSyynlaxrRuXE+AA3Ko5meRZJxMa60mMYwXxWCle7yYvaeSKIdJKuUekjo0etre8lWOG0PpTyXmzG5uPUo9RNzYsPWOi+MZsOXcT2tNRf8hllpLDSODZ3RnzKWHfdtNDv3vcOpd6y4/JCu7ZbLbcfsVJZrPRw0dBSRiKCniGzWNHgPxk95O5KxuFYbZMEwqixqwwdlSUzOriPPlefjSPPi5x6k+7uAWxJiNf6U4MYLRtyaPj2pTwc2LuzcdSiIirlIRERERERERERERERERERERERERERERERERERERERERERERERE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";
+/* =====================================================================
+   GERADOR DE QR CODE  —  JavaScript puro, sem internet e sem bibliotecas
+   Modo byte (texto), níveis de correção L, M, Q e H, versões 1 a 40.
+   Segue a norma ISO/IEC 18004 (mesma lógica usada por geradores abertos
+   como o de Project Nayuki). Uso:
+     var m = QR.criar('texto', 'M');   // { versao, tamanho, modulos[y][x] }
+     var svg = QR.svg(m, 4);           // string <svg> com margem de 4 módulos
+   ===================================================================== */
+var QR = (function () {
+  'use strict';
+
+  // Índice = versão (1..40). Posição 0 só preenche.
+  var ECC_POR_BLOCO = [
+    [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
+    [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28],
+    [-1, 13, 22, 18, 26, 18, 24, 18, 22, 20, 24, 28, 26, 24, 20, 30, 24, 28, 28, 26, 30, 28, 30, 30, 30, 30, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
+    [-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+  ];
+  var NUM_BLOCOS = [
+    [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25],
+    [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49],
+    [-1, 1, 1, 2, 2, 4, 4, 6, 6, 8, 8, 8, 10, 12, 16, 12, 17, 16, 18, 21, 20, 23, 23, 25, 27, 29, 34, 34, 35, 38, 40, 43, 45, 48, 51, 53, 56, 59, 62, 65, 68],
+    [-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81]
+  ];
+  var NIVEIS = { L: 0, M: 1, Q: 2, H: 3 };
+  var BITS_FORMATO = [1, 0, 3, 2];   // L, M, Q, H
+
+  function bit(x, i) { return ((x >>> i) & 1) !== 0; }
+
+  function modulosBrutos(v) {
+    var r = (16 * v + 128) * v + 64;
+    if (v >= 2) {
+      var na = Math.floor(v / 7) + 2;
+      r -= (25 * na - 10) * na - 55;
+      if (v >= 7) r -= 36;
+    }
+    return r;
+  }
+  function codewordsDados(v, n) {
+    return Math.floor(modulosBrutos(v) / 8) - ECC_POR_BLOCO[n][v] * NUM_BLOCOS[n][v];
+  }
+
+  /* ---- Reed-Solomon sobre GF(2^8), polinômio 0x11D ---- */
+  function gfMul(x, y) {
+    var z = 0;
+    for (var i = 7; i >= 0; i--) {
+      z = (z << 1) ^ ((z >>> 7) * 0x11D);
+      z ^= ((y >>> i) & 1) * x;
+    }
+    return z;
+  }
+  function rsDivisor(grau) {
+    var r = [], i, j;
+    for (i = 0; i < grau - 1; i++) r.push(0);
+    r.push(1);
+    var raiz = 1;
+    for (i = 0; i < grau; i++) {
+      for (j = 0; j < r.length; j++) {
+        r[j] = gfMul(r[j], raiz);
+        if (j + 1 < r.length) r[j] ^= r[j + 1];
+      }
+      raiz = gfMul(raiz, 0x02);
+    }
+    return r;
+  }
+  function rsResto(dados, divisor) {
+    var r = divisor.map(function () { return 0; });
+    dados.forEach(function (b) {
+      var fator = b ^ r.shift();
+      r.push(0);
+      divisor.forEach(function (coef, i) { r[i] ^= gfMul(coef, fator); });
+    });
+    return r;
+  }
+
+  function comEccEntrelacado(dados, v, n) {
+    var nb = NUM_BLOCOS[n][v], eccLen = ECC_POR_BLOCO[n][v];
+    var bruto = Math.floor(modulosBrutos(v) / 8);
+    var curtos = nb - bruto % nb;
+    var lenCurto = Math.floor(bruto / nb);
+    var blocos = [], div = rsDivisor(eccLen), i, k = 0;
+    for (i = 0; i < nb; i++) {
+      var dat = dados.slice(k, k + lenCurto - eccLen + (i < curtos ? 0 : 1));
+      k += dat.length;
+      var ecc = rsResto(dat, div);
+      if (i < curtos) dat.push(0);
+      blocos.push(dat.concat(ecc));
+    }
+    var res = [];
+    for (i = 0; i < blocos[0].length; i++) {
+      for (var j = 0; j < blocos.length; j++) {
+        if (i !== lenCurto - eccLen || j >= curtos) res.push(blocos[j][i]);
+      }
+    }
+    return res;
+  }
+
+  /* ---- texto -> bytes (UTF-8) ---- */
+  function bytesDe(texto) {
+    if (typeof TextEncoder !== 'undefined') return Array.prototype.slice.call(new TextEncoder().encode(texto));
+    var s = unescape(encodeURIComponent(texto)), r = [];
+    for (var i = 0; i < s.length; i++) r.push(s.charCodeAt(i));
+    return r;
+  }
+
+  function posicoesAlinhamento(v, tam) {
+    if (v === 1) return [];
+    var n = Math.floor(v / 7) + 2;
+    var passo = (v === 32) ? 26 : Math.ceil((v * 4 + 4) / (n * 2 - 2)) * 2;
+    var r = [6];
+    for (var pos = tam - 7; r.length < n; pos -= passo) r.splice(1, 0, pos);
+    return r;
+  }
+
+  /* ---- montagem da matriz ---- */
+  function criar(texto, nivel) {
+    var n = NIVEIS[nivel === undefined ? 'M' : nivel];
+    if (n === undefined) throw new Error('Nível inválido');
+    var bytes = bytesDe(texto);
+
+    // escolhe a menor versão em que os dados cabem
+    var v, usados;
+    for (v = 1; ; v++) {
+      if (v > 40) throw new Error('Texto grande demais para um QR code');
+      usados = 4 + (v <= 9 ? 8 : 16) + bytes.length * 8;
+      if (usados <= codewordsDados(v, n) * 8) break;
+    }
+
+    // fluxo de bits: modo byte (0100) + tamanho + dados
+    var bits = [];
+    function empurra(val, len) { for (var i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); }
+    empurra(4, 4);
+    empurra(bytes.length, v <= 9 ? 8 : 16);
+    bytes.forEach(function (b) { empurra(b, 8); });
+    var cap = codewordsDados(v, n) * 8;
+    empurra(0, Math.min(4, cap - bits.length));
+    empurra(0, (8 - bits.length % 8) % 8);
+    for (var pad = 0xEC; bits.length < cap; pad ^= 0xEC ^ 0x11) empurra(pad, 8);
+    var dados = [], i;
+    for (i = 0; i < bits.length; i += 8) {
+      var byte = 0;
+      for (var b = 0; b < 8; b++) byte = (byte << 1) | bits[i + b];
+      dados.push(byte);
+    }
+    var todos = comEccEntrelacado(dados, v, n);
+
+    var tam = v * 4 + 17;
+    var mod = [], func = [], y, x;
+    for (y = 0; y < tam; y++) { mod.push([]); func.push([]); for (x = 0; x < tam; x++) { mod[y].push(false); func[y].push(false); } }
+    function funcMod(px, py, escuro) { mod[py][px] = escuro; func[py][px] = true; }
+
+    function localizador(cx, cy) {
+      for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) {
+        var d = Math.max(Math.abs(dx), Math.abs(dy)), xx = cx + dx, yy = cy + dy;
+        if (xx >= 0 && xx < tam && yy >= 0 && yy < tam) funcMod(xx, yy, d !== 2 && d !== 4);
+      }
+    }
+    function alinhamento(cx, cy) {
+      for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++)
+        funcMod(cx + dx, cy + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }
+    function formato(mascara) {
+      var d = BITS_FORMATO[n] << 3 | mascara, rem = d, k;
+      for (k = 0; k < 10; k++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+      var bs = (d << 10 | rem) ^ 0x5412;
+      for (k = 0; k <= 5; k++) funcMod(8, k, bit(bs, k));
+      funcMod(8, 7, bit(bs, 6));
+      funcMod(8, 8, bit(bs, 7));
+      funcMod(7, 8, bit(bs, 8));
+      for (k = 9; k < 15; k++) funcMod(14 - k, 8, bit(bs, k));
+      for (k = 0; k < 8; k++) funcMod(tam - 1 - k, 8, bit(bs, k));
+      for (k = 8; k < 15; k++) funcMod(8, tam - 15 + k, bit(bs, k));
+      funcMod(8, tam - 8, true);
+    }
+    function versaoBits() {
+      if (v < 7) return;
+      var rem = v, k;
+      for (k = 0; k < 12; k++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1F25);
+      var bs = v << 12 | rem;
+      for (k = 0; k < 18; k++) {
+        var cor = bit(bs, k), a = tam - 11 + k % 3, b = Math.floor(k / 3);
+        funcMod(a, b, cor);
+        funcMod(b, a, cor);
+      }
+    }
+
+    // padrões de função
+    for (i = 0; i < tam; i++) { funcMod(6, i, i % 2 === 0); funcMod(i, 6, i % 2 === 0); }
+    localizador(3, 3); localizador(tam - 4, 3); localizador(3, tam - 4);
+    var al = posicoesAlinhamento(v, tam), na = al.length;
+    for (i = 0; i < na; i++) for (var j = 0; j < na; j++) {
+      if (!((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0))) alinhamento(al[i], al[j]);
+    }
+    formato(0);
+    versaoBits();
+
+    // dados em zigue-zague
+    var idx = 0;
+    for (var dir = tam - 1; dir >= 1; dir -= 2) {
+      if (dir === 6) dir = 5;
+      for (var vert = 0; vert < tam; vert++) {
+        for (var jj = 0; jj < 2; jj++) {
+          var xx = dir - jj, sobe = ((dir + 1) & 2) === 0, yy = sobe ? tam - 1 - vert : vert;
+          if (!func[yy][xx] && idx < todos.length * 8) {
+            mod[yy][xx] = bit(todos[idx >>> 3], 7 - (idx & 7));
+            idx++;
+          }
+        }
+      }
+    }
+
+    function aplicaMascara(m) {
+      for (var py = 0; py < tam; py++) for (var px = 0; px < tam; px++) {
+        var inv;
+        switch (m) {
+          case 0: inv = (px + py) % 2 === 0; break;
+          case 1: inv = py % 2 === 0; break;
+          case 2: inv = px % 3 === 0; break;
+          case 3: inv = (px + py) % 3 === 0; break;
+          case 4: inv = (Math.floor(px / 3) + Math.floor(py / 2)) % 2 === 0; break;
+          case 5: inv = px * py % 2 + px * py % 3 === 0; break;
+          case 6: inv = (px * py % 2 + px * py % 3) % 2 === 0; break;
+          default: inv = ((px + py) % 2 + px * py % 3) % 2 === 0;
+        }
+        if (!func[py][px] && inv) mod[py][px] = !mod[py][px];
+      }
+    }
+
+    // penalidade (quatro regras da norma) para escolher a melhor máscara
+    function penalidade() {
+      var total = 0, py, px, k;
+      function linhaPadrao(get) {
+        var pts = 0;
+        for (var a = 0; a < tam; a++) {
+          var corrida = 1, ant = get(a, 0);
+          for (var b = 1; b < tam; b++) {
+            var c = get(a, b);
+            if (c === ant) { corrida++; if (corrida === 5) pts += 3; else if (corrida > 5) pts++; }
+            else { corrida = 1; ant = c; }
+          }
+          // padrão 1:1:3:1:1 com 4 módulos claros de um lado
+          for (b = 0; b + 11 <= tam; b++) {
+            var s1 = '', s2 = '';
+            for (var q = 0; q < 11; q++) s1 += get(a, b + q) ? '1' : '0';
+            if (s1 === '10111010000' || s1 === '00001011101') pts += 40;
+          }
+        }
+        return pts;
+      }
+      total += linhaPadrao(function (a, b) { return mod[a][b]; });
+      total += linhaPadrao(function (a, b) { return mod[b][a]; });
+      for (py = 0; py < tam - 1; py++) for (px = 0; px < tam - 1; px++) {
+        var c = mod[py][px];
+        if (c === mod[py][px + 1] && c === mod[py + 1][px] && c === mod[py + 1][px + 1]) total += 3;
+      }
+      var escuros = 0;
+      for (py = 0; py < tam; py++) for (px = 0; px < tam; px++) if (mod[py][px]) escuros++;
+      var t = tam * tam;
+      k = Math.ceil(Math.abs(escuros * 20 - t * 10) / t) - 1;
+      total += k * 10;
+      return total;
+    }
+
+    var melhor = 0, menor = Infinity;
+    for (var m = 0; m < 8; m++) {
+      aplicaMascara(m);
+      formato(m);
+      var p = penalidade();
+      if (p < menor) { menor = p; melhor = m; }
+      aplicaMascara(m);
+    }
+    aplicaMascara(melhor);
+    formato(melhor);
+
+    return { versao: v, tamanho: tam, modulos: mod, mascara: melhor, bytes: bytes.length };
+  }
+
+  /* ---- SVG (margem = "quiet zone" de 4 módulos, exigida pela norma) ---- */
+  function svg(matriz, margem, corEscura, corClara) {
+    margem = margem === undefined ? 4 : margem;
+    var tam = matriz.tamanho, total = tam + margem * 2, d = [];
+    for (var y = 0; y < tam; y++) for (var x = 0; x < tam; x++) {
+      if (matriz.modulos[y][x]) d.push('M' + (x + margem) + ',' + (y + margem) + 'h1v1h-1z');
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + total + ' ' + total + '" shape-rendering="crispEdges">' +
+      '<rect width="' + total + '" height="' + total + '" fill="' + (corClara || '#FFFFFF') + '"/>' +
+      '<path d="' + d.join('') + '" fill="' + (corEscura || '#0F1B4C') + '"/></svg>';
+  }
+
+  return { criar: criar, svg: svg, capacidadeBytes: function (v, nivel) { return Math.floor((codewordsDados(v, NIVEIS[nivel]) * 8 - 4 - (v <= 9 ? 8 : 16)) / 8); } };
+})();
+
+if (typeof module !== 'undefined') { module.exports = QR; }
+
+/* =====================================================================
+   NÚCLEO DO TESTE  —  modelo RIASEC (John Holland), versão por curso
+   Tudo o que a equipe de extensão pode querer ajustar está aqui:
+   tipos, cursos (código RIASEC de 3 letras), perguntas e pesos.
+   As perguntas são originais (não são as do teste oficial de Holland).
+   ===================================================================== */
+
+/* Os 6 tipos do modelo RIASEC, na ordem do "hexágono" de Holland.
+   É a mesma ordem usada no gráfico radar. */
+const DIMS = [
+  { id: 'R', nome: 'Realista',      curto: 'Realista',      desc: 'gosta de agir com as mãos, ferramentas, máquinas, natureza e coisas concretas' },
+  { id: 'I', nome: 'Investigativo', curto: 'Investigativo', desc: 'gosta de observar, investigar, analisar e resolver problemas complexos' },
+  { id: 'A', nome: 'Artístico',     curto: 'Artístico',     desc: 'gosta de criar, imaginar e se expressar de forma original' },
+  { id: 'S', nome: 'Social',        curto: 'Social',        desc: 'gosta de ajudar, ensinar, cuidar e trabalhar com pessoas' },
+  { id: 'E', nome: 'Empreendedor',  curto: 'Empreendedor',  desc: 'gosta de liderar, persuadir, negociar e tomar iniciativa' },
+  { id: 'C', nome: 'Convencional',  curto: 'Convencional',  desc: 'gosta de organizar, seguir procedimentos e cuidar de dados e detalhes' }
+];
+
+/* Como o código de 3 letras de um curso vira números:
+   1ª letra = peso 1, 2ª = 0,7, 3ª = 0,4, demais tipos = 0. */
+const PESOS_CODIGO = [1, 0.7, 0.4];
+
+/* Quantos cursos entram na nota de cada área (os mais parecidos com o perfil da pessoa). */
+const CURSOS_POR_AREA = 3;
+
+/* Cursos de graduação do Campus Londrina da UTFPR (informados pela equipe do projeto).
+   Aparecem em destaque dourado, com o turno, nos resultados.
+   CONFIRME a oferta atual antes de divulgar: https://www.utfpr.edu.br */
+const CURSOS_UTFPR = {
+  cdia:       { nome: 'Ciência de Dados e Inteligência Artificial', turno: 'Noturno' },
+  si:         { nome: 'Sistemas de Informação',                      turno: 'Noturno' },
+  ambiental:  { nome: 'Engenharia Ambiental e Sanitária',            turno: 'Integral' },
+  materiais:  { nome: 'Engenharia de Materiais',                     turno: 'Integral' },
+  producao:   { nome: 'Engenharia de Produção',                      turno: 'Integral (vespertino/noturno)' },
+  mecanica:   { nome: 'Engenharia Mecânica',                         turno: 'Integral' },
+  quimica:    { nome: 'Engenharia Química',                          turno: 'Integral' },
+  licquimica: { nome: 'Licenciatura em Química',                     turno: 'Noturno' },
+  alimentos:  { nome: 'Tecnologia em Alimentos',                     turno: 'Noturno' }
+};
+
+/* CURSOS: cada curso tem um código RIASEC de 3 letras ('cod'), da letra mais forte para a mais fraca.
+   São aproximações inspiradas nos códigos de Holland: REVISAR com a equipe e com orientadores.
+   tipo: 'utfpr' (Campus Londrina), 'grad' (graduação em geral) ou 'rapido' (técnico/tecnólogo). */
+const CURSOS = [
+  // Computação e dados
+  { id: 'c_comp',  nome: 'Ciência da Computação',                     area: 'computacao',  tipo: 'grad',   cod: 'IRC' },
+  { id: 'c_soft',  nome: 'Engenharia de Software',                    area: 'computacao',  tipo: 'grad',   cod: 'ICE' },
+  { id: 'c_si',    nome: 'Sistemas de Informação',                    area: 'computacao',  tipo: 'utfpr',  utfpr: 'si',   cod: 'CIE' },
+  { id: 'c_cdia',  nome: 'Ciência de Dados e Inteligência Artificial', area: 'computacao', tipo: 'utfpr',  utfpr: 'cdia', cod: 'ICA' },
+  { id: 'c_ecomp', nome: 'Engenharia de Computação',                  area: 'computacao',  tipo: 'grad',   cod: 'IRC' },
+  { id: 'c_redes', nome: 'Redes de Computadores',                     area: 'computacao',  tipo: 'rapido', cod: 'RIC' },
+  { id: 'c_ads',   nome: 'Análise e Desenvolvimento de Sistemas',     area: 'computacao',  tipo: 'rapido', cod: 'CIE' },
+  // Engenharias e produção
+  { id: 'e_mec',   nome: 'Engenharia Mecânica',                       area: 'engenharias', tipo: 'utfpr',  utfpr: 'mecanica',  cod: 'RIC' },
+  { id: 'e_mat',   nome: 'Engenharia de Materiais',                   area: 'engenharias', tipo: 'utfpr',  utfpr: 'materiais', cod: 'IRA' },
+  { id: 'e_prod',  nome: 'Engenharia de Produção',                    area: 'engenharias', tipo: 'utfpr',  utfpr: 'producao',  cod: 'ECI' },
+  { id: 'e_quim',  nome: 'Engenharia Química',                        area: 'engenharias', tipo: 'utfpr',  utfpr: 'quimica',   cod: 'IRC' },
+  { id: 'e_civil', nome: 'Engenharia Civil',                          area: 'engenharias', tipo: 'grad',   cod: 'REI' },
+  { id: 'e_elet',  nome: 'Engenharia Elétrica',                       area: 'engenharias', tipo: 'grad',   cod: 'IRC' },
+  { id: 'e_auto',  nome: 'Engenharia de Controle e Automação',        area: 'engenharias', tipo: 'grad',   cod: 'RCI' },
+  { id: 'e_mecat', nome: 'Mecatrônica Industrial',                    area: 'engenharias', tipo: 'rapido', cod: 'RCI' },
+  // Ciências exatas e pesquisa
+  { id: 'x_mat',   nome: 'Matemática',                                area: 'exatas',      tipo: 'grad',   cod: 'IAC' },
+  { id: 'x_fis',   nome: 'Física',                                    area: 'exatas',      tipo: 'grad',   cod: 'IRA' },
+  { id: 'x_quim',  nome: 'Química',                                   area: 'exatas',      tipo: 'grad',   cod: 'IRA' },
+  { id: 'x_est',   nome: 'Estatística',                               area: 'exatas',      tipo: 'grad',   cod: 'ICA' },
+  { id: 'x_tq',    nome: 'Técnico em Química',                        area: 'exatas',      tipo: 'rapido', cod: 'RIC' },
+  // Ambiente, alimentos e agro
+  { id: 'a_agro',  nome: 'Agronomia',                                 area: 'ambiente',    tipo: 'grad',   cod: 'RES' },
+  { id: 'a_bio',   nome: 'Ciências Biológicas',                       area: 'ambiente',    tipo: 'grad',   cod: 'IRS' },
+  { id: 'a_vet',   nome: 'Medicina Veterinária',                      area: 'ambiente',    tipo: 'grad',   cod: 'RSI' },
+  { id: 'a_ea',    nome: 'Engenharia Ambiental e Sanitária',          area: 'ambiente',    tipo: 'utfpr',  utfpr: 'ambiental', cod: 'RIS' },
+  { id: 'a_alim',  nome: 'Tecnologia em Alimentos',                   area: 'ambiente',    tipo: 'utfpr',  utfpr: 'alimentos', cod: 'RCS' },
+  { id: 'a_ealim', nome: 'Engenharia de Alimentos',                   area: 'ambiente',    tipo: 'grad',   cod: 'IRS' },
+  { id: 'a_tma',   nome: 'Técnico em Meio Ambiente',                  area: 'ambiente',    tipo: 'rapido', cod: 'RSI' },
+  { id: 'a_tag',   nome: 'Técnico em Agropecuária',                   area: 'ambiente',    tipo: 'rapido', cod: 'RES' },
+  // Saúde
+  { id: 's_med',   nome: 'Medicina',                                  area: 'saude',       tipo: 'grad',   cod: 'SIE' },
+  { id: 's_enf',   nome: 'Enfermagem',                                area: 'saude',       tipo: 'grad',   cod: 'SCR' },
+  { id: 's_fisio', nome: 'Fisioterapia',                              area: 'saude',       tipo: 'grad',   cod: 'SRI' },
+  { id: 's_nutr',  nome: 'Nutrição',                                  area: 'saude',       tipo: 'grad',   cod: 'SIC' },
+  { id: 's_farm',  nome: 'Farmácia',                                  area: 'saude',       tipo: 'grad',   cod: 'ISC' },
+  { id: 's_bio',   nome: 'Biomedicina',                               area: 'saude',       tipo: 'grad',   cod: 'ISR' },
+  { id: 's_odont', nome: 'Odontologia',                               area: 'saude',       tipo: 'grad',   cod: 'SRA' },
+  { id: 's_te',    nome: 'Técnico em Enfermagem',                     area: 'saude',       tipo: 'rapido', cod: 'SRC' },
+  { id: 's_tac',   nome: 'Técnico em Análises Clínicas',              area: 'saude',       tipo: 'rapido', cod: 'CRI' },
+  // Educação
+  { id: 'ed_ped',  nome: 'Pedagogia',                                 area: 'educacao',    tipo: 'grad',   cod: 'SAE' },
+  { id: 'ed_mat',  nome: 'Licenciatura em Matemática',                area: 'educacao',    tipo: 'grad',   cod: 'SEC' },
+  { id: 'ed_letras', nome: 'Licenciatura em Letras',                  area: 'educacao',    tipo: 'grad',   cod: 'ASE' },
+  { id: 'ed_fis',  nome: 'Licenciatura em Física',                    area: 'educacao',    tipo: 'grad',   cod: 'SEI' },
+  { id: 'ed_lq',   nome: 'Licenciatura em Química',                   area: 'educacao',    tipo: 'utfpr',  utfpr: 'licquimica', cod: 'SIE' },
+  { id: 'ed_mag',  nome: 'Formação de Docentes (Magistério)',         area: 'educacao',    tipo: 'rapido', cod: 'SAC' },
+  // Design, arte e comunicação
+  { id: 'd_design', nome: 'Design',                                   area: 'design',      tipo: 'grad',   cod: 'AER' },
+  { id: 'd_arq',   nome: 'Arquitetura e Urbanismo',                   area: 'design',      tipo: 'grad',   cod: 'ARI' },
+  { id: 'd_pub',   nome: 'Publicidade e Propaganda',                  area: 'design',      tipo: 'grad',   cod: 'AES' },
+  { id: 'd_jorn',  nome: 'Jornalismo',                                area: 'design',      tipo: 'grad',   cod: 'AIS' },
+  { id: 'd_art',   nome: 'Artes Visuais',                             area: 'design',      tipo: 'grad',   cod: 'ARS' },
+  { id: 'd_dg',    nome: 'Técnico em Design Gráfico',                 area: 'design',      tipo: 'rapido', cod: 'AEC' },
+  // Gestão, negócios e finanças
+  { id: 'g_adm',   nome: 'Administração',                             area: 'gestao',      tipo: 'grad',   cod: 'ECS' },
+  { id: 'g_cont',  nome: 'Ciências Contábeis',                        area: 'gestao',      tipo: 'grad',   cod: 'CEI' },
+  { id: 'g_econ',  nome: 'Economia',                                  area: 'gestao',      tipo: 'grad',   cod: 'IEC' },
+  { id: 'g_ri',    nome: 'Relações Internacionais',                   area: 'gestao',      tipo: 'grad',   cod: 'ESI' },
+  { id: 'g_prod',  nome: 'Engenharia de Produção',                    area: 'gestao',      tipo: 'utfpr',  utfpr: 'producao', cod: 'ECI' },
+  { id: 'g_log',   nome: 'Técnico em Logística',                      area: 'gestao',      tipo: 'rapido', cod: 'CER' },
+  { id: 'g_mkt',   nome: 'Marketing',                                 area: 'gestao',      tipo: 'rapido', cod: 'EAC' },
+  // Humanas e sociedade
+  { id: 'h_dir',   nome: 'Direito',                                   area: 'humanas',     tipo: 'grad',   cod: 'ESI' },
+  { id: 'h_psico', nome: 'Psicologia',                                area: 'humanas',     tipo: 'grad',   cod: 'SIA' },
+  { id: 'h_soc',   nome: 'Ciências Sociais',                          area: 'humanas',     tipo: 'grad',   cod: 'ISA' },
+  { id: 'h_ss',    nome: 'Serviço Social',                            area: 'humanas',     tipo: 'grad',   cod: 'SEA' },
+  { id: 'h_hist',  nome: 'História',                                  area: 'humanas',     tipo: 'grad',   cod: 'IAS' },
+  { id: 'h_jur',   nome: 'Técnico em Serviços Jurídicos',             area: 'humanas',     tipo: 'rapido', cod: 'CES' },
+  { id: 'h_rh',    nome: 'Gestão de Recursos Humanos',                area: 'humanas',     tipo: 'rapido', cod: 'ESC' }
+];
+
+const AREA_META = {
+  computacao:  ['Computação e Dados', 'Criar sistemas, aplicativos, análises e soluções inteligentes usando tecnologia e lógica.'],
+  engenharias: ['Engenharias e Produção', 'Projetar, construir e melhorar máquinas, materiais, processos e estruturas, unindo prática e cálculo.'],
+  exatas:      ['Ciências Exatas e Pesquisa', 'Investigar como o mundo funciona, com matemática, física e química, e gerar conhecimento novo.'],
+  ambiente:    ['Ambiente, Alimentos e Agro', 'Cuidar da natureza, dos alimentos e da produção, com ciência aplicada e trabalho de campo ou laboratório.'],
+  saude:       ['Saúde e Bem-estar', 'Cuidar de pessoas e promover saúde, combinando conhecimento científico, técnico e contato humano.'],
+  educacao:    ['Educação e Ensino', 'Ensinar, orientar e ajudar pessoas a aprender, em escolas, projetos sociais e outros espaços.'],
+  design:      ['Design, Arte e Comunicação', 'Dar forma a ideias: imagens, espaços, histórias, marcas e mensagens que chegam às pessoas.'],
+  gestao:      ['Gestão, Negócios e Finanças', 'Organizar pessoas, dinheiro e processos para fazer empresas, projetos e ideias funcionarem.'],
+  humanas:     ['Humanas e Sociedade', 'Entender pessoas, leis, culturas e a sociedade para defender direitos e propor soluções coletivas.']
+};
+
+const IDS = DIMS.map(function (d) { return d.id; });
+function codigoParaVetor(cod) {
+  return IDS.map(function (d) { const i = cod.indexOf(d); return i < 0 ? 0 : PESOS_CODIGO[i]; });
+}
+CURSOS.forEach(function (c) {
+  c.vet = codigoParaVetor(c.cod);
+  c.v = {}; IDS.forEach(function (d, i) { c.v[d] = c.vet[i]; });
+});
+const AREA_IDS = Object.keys(AREA_META);
+const AREAS = AREA_IDS.map(function (id) {
+  const cursos = CURSOS.filter(function (c) { return c.area === id; });
+  const v = IDS.map(function (d, i) { return cursos.reduce(function (s, c) { return s + c.vet[i]; }, 0) / Math.max(1, cursos.length); });
+  const codigo = v.map(function (x, i) { return { d: IDS[i], v: x, i: i }; })
+    .sort(function (a, b) { return (b.v - a.v) || (a.i - b.i); }).slice(0, 3).map(function (x) { return x.d; }).join('');
+  const utfpr = cursos.filter(function (c) { return c.tipo === 'utfpr'; }).map(function (c) { return c.utfpr; });
+  return { id: id, nome: AREA_META[id][0], desc: AREA_META[id][1], v: v, codigo: codigo, utfpr: utfpr,
+    cursosUtfpr: utfpr.map(function (u) { return CURSOS_UTFPR[u]; }), cursos: cursos };
+});
+
+/* Etapa 1 — "Do que você gosta?" (marcar vários).
+   'p' = pesos por tipo: o tipo principal vale 1; um tipo secundário (opcional) vale 0,2 a 0,5,
+   como a 2ª letra nos códigos de Holland. A ordem na tela é sorteada a cada teste. */
+const INTERESSES = [
+  { id: 'r1', t: 'Montar, consertar ou desmontar aparelhos',                    p: { R: 1 } },
+  { id: 'r2', t: 'Construir ou instalar coisas com as próprias mãos',           p: { R: 1 } },
+  { id: 'r3', t: 'Cuidar de plantas, hortas ou animais',                        p: { R: 1, S: .4 } },
+  { id: 'r4', t: 'Operar máquinas, ferramentas ou equipamentos',                p: { R: 1, C: .3 } },
+  { id: 'r5', t: 'Trabalhar ao ar livre, em campo, longe da mesa de escritório', p: { R: 1, E: .3 } },
+
+  { id: 'i1', t: 'Fazer experimentos e descobrir como as coisas funcionam',     p: { I: 1, R: .4 } },
+  { id: 'i2', t: 'Resolver quebra-cabeças e problemas de matemática',           p: { I: 1, C: .4 } },
+  { id: 'i3', t: 'Analisar dados, gráficos e estatísticas',                     p: { I: 1, C: .5 } },
+  { id: 'i4', t: 'Programar e mexer em apps e computadores',                    p: { I: 1, C: .5 } },
+  { id: 'i5', t: 'Ler e pesquisar para entender um assunto a fundo',            p: { I: 1, A: .3 } },
+
+  { id: 'a1', t: 'Desenhar, fotografar ou editar vídeos',                       p: { A: 1 } },
+  { id: 'a2', t: 'Escrever, tocar, cantar ou atuar',                            p: { A: 1, S: .3 } },
+  { id: 'a3', t: 'Inventar histórias, personagens, jogos ou projetos',          p: { A: 1, I: .3 } },
+  { id: 'a4', t: 'Dar um visual único a espaços, objetos ou marcas',            p: { A: 1, E: .3 } },
+  { id: 'a5', t: 'Imaginar e desenhar casas, prédios ou cidades',               p: { A: 1, R: .4 } },
+
+  { id: 's1', t: 'Ajudar pessoas a resolver problemas',                         p: { S: 1 } },
+  { id: 's2', t: 'Explicar coisas para os outros',                              p: { S: 1, E: .3 } },
+  { id: 's3', t: 'Cuidar da saúde e do bem-estar das pessoas',                  p: { S: 1, I: .4, R: .2 } },
+  { id: 's4', t: 'Participar de ações voluntárias e projetos com a comunidade', p: { S: 1, E: .3 } },
+  { id: 's5', t: 'Ouvir e acolher pessoas que passam por dificuldades',         p: { S: 1, I: .3 } },
+
+  { id: 'e1', t: 'Liderar equipes e tomar decisões',                            p: { E: 1 } },
+  { id: 'e2', t: 'Vender, negociar e convencer pessoas',                        p: { E: 1 } },
+  { id: 'e3', t: 'Ter ideias de negócio e correr atrás delas',                  p: { E: 1, C: .3 } },
+  { id: 'e4', t: 'Debater e defender minhas ideias em público',                 p: { E: 1, S: .3 } },
+  { id: 'e5', t: 'Defender direitos e negociar acordos entre pessoas',          p: { E: 1, S: .4 } },
+
+  { id: 'c1', t: 'Organizar planilhas, arquivos e documentos',                  p: { C: 1 } },
+  { id: 'c2', t: 'Cuidar de dinheiro, contas e orçamentos',                     p: { C: 1, E: .3 } },
+  { id: 'c3', t: 'Seguir passos e regras para deixar tudo certinho',            p: { C: 1 } },
+  { id: 'c4', t: 'Planejar agendas, prazos e rotinas',                          p: { C: 1, E: .2 } },
+  { id: 'c5', t: 'Conferir detalhes e corrigir erros até ficar exato',          p: { C: 1, I: .3 } }
+];
+
+/* Etapa 2 — "Como você se vê?" (escala de 1 a 5). Três frases por tipo. */
+const HABILIDADES = [
+  { id: 'hr1', t: 'Sou bom(a) com as mãos e gosto de ver algo ficar pronto.',            p: { R: 1 } },
+  { id: 'hr2', t: 'Me dou bem com máquinas, ferramentas e equipamentos.',                p: { R: 1 } },
+  { id: 'hr3', t: 'Prefiro tarefas físicas ou de campo a ficar o dia todo sentado(a).',  p: { R: 1 } },
+  { id: 'hi1', t: 'Tenho paciência para ficar horas resolvendo um problema difícil.',    p: { I: 1 } },
+  { id: 'hi2', t: 'Gosto de entender a teoria por trás das coisas antes de agir.',       p: { I: 1 } },
+  { id: 'hi3', t: 'Me sinto bem lidando com números, fórmulas e lógica.',                p: { I: 1, C: .3 } },
+  { id: 'ha1', t: 'Tenho ideias diferentes e gosto de fazer as coisas do meu jeito.',    p: { A: 1 } },
+  { id: 'ha2', t: 'Tenho facilidade para me expressar de forma criativa.',               p: { A: 1 } },
+  { id: 'ha3', t: 'Percebo cores, formas e estilos que muita gente não nota.',           p: { A: 1 } },
+  { id: 'hs1', t: 'As pessoas costumam me procurar para pedir ajuda ou conselho.',       p: { S: 1 } },
+  { id: 'hs2', t: 'Tenho facilidade para explicar as coisas e ouvir os outros.',         p: { S: 1 } },
+  { id: 'hs3', t: 'Quando vejo alguém passando dificuldade, sinto vontade de ajudar.',   p: { S: 1 } },
+  { id: 'he1', t: 'Me sinto à vontade para liderar um grupo e tomar decisões.',          p: { E: 1 } },
+  { id: 'he2', t: 'Consigo convencer as pessoas das minhas ideias.',                     p: { E: 1 } },
+  { id: 'he3', t: 'Gosto de correr riscos calculados para conseguir o que quero.',       p: { E: 1 } },
+  { id: 'hc1', t: 'Consigo me organizar e manter tudo em ordem.',                        p: { C: 1 } },
+  { id: 'hc2', t: 'Presto atenção nos detalhes e cumpro prazos.',                        p: { C: 1 } },
+  { id: 'hc3', t: 'Prefiro ter um passo a passo claro antes de começar uma tarefa.',     p: { C: 1 } }
+];
+
+/* Etapa 3 — "O que é importante para você?" (até 3). Um valor por tipo. */
+const VALORES = [
+  { id: 'vR', t: 'Construir coisas concretas e úteis',                 p: { R: 1 } },
+  { id: 'vI', t: 'Descobrir e produzir conhecimento',                  p: { I: 1 } },
+  { id: 'vA', t: 'Criar e inovar com liberdade',                       p: { A: 1 } },
+  { id: 'vS', t: 'Fazer diferença na vida das pessoas',                p: { S: 1 } },
+  { id: 'vE', t: 'Liderar e ter autonomia no meu caminho',             p: { E: 1 } },
+  { id: 'vC', t: 'Ter rotina organizada e segurança no trabalho',      p: { C: 1 } }
+];
+
+/* Quanto cada etapa pesa no perfil final (soma = 1) */
+const PESOS = { interesses: .45, habilidades: .40, valores: .15 };
+
+/* ---------------------------------------------------------------------
+   CÁLCULO
+   1) cada etapa vira um vetor de 6 números (um por tipo RIASEC);
+   2) cada vetor é normalizado (o maior valor vira 1);
+   3) os três vetores são combinados com os PESOS => vetor de perfil;
+      os 3 tipos mais altos formam o código RIASEC da pessoa (ex.: IRC);
+   4) o perfil é comparado com o vetor de CADA CURSO (similaridade do cosseno,
+      depois de descontar a média);
+   5) a nota da área é a média dos CURSOS_POR_AREA cursos mais parecidos.
+   O percentual é um índice de afinidade, NÃO uma probabilidade de sucesso.
+   --------------------------------------------------------------------- */
+function somaPesos(lista) {
+  return IDS.map(function (d) { return lista.reduce(function (s, it) { return s + (it.p[d] || 0); }, 0); });
+}
+const TOT_I = somaPesos(INTERESSES);
+const TOT_H = somaPesos(HABILIDADES);
+
+function escalar(v) {
+  const m = Math.max.apply(null, v);
+  return m > 0 ? v.map(function (x) { return x / m; }) : v.map(function () { return 0; });
+}
+function vetInteresses(sel) {
+  return IDS.map(function (d, i) {
+    if (!TOT_I[i]) return 0;
+    return INTERESSES.reduce(function (s, it) { return s + (sel.has(it.id) ? (it.p[d] || 0) : 0); }, 0) / TOT_I[i];
+  });
+}
+function vetHabilidades(resp) {
+  return IDS.map(function (d, i) {
+    if (!TOT_H[i]) return 0;
+    return HABILIDADES.reduce(function (s, it) {
+      const nota = resp[it.id];
+      return s + (nota ? ((nota - 1) / 4) * (it.p[d] || 0) : 0);
+    }, 0) / TOT_H[i];
+  });
+}
+function vetValores(sel) {
+  return IDS.map(function (d) {
+    return VALORES.reduce(function (s, it) { return s + (sel.has(it.id) ? (it.p[d] || 0) : 0); }, 0);
+  });
+}
+function perfil(e) {
+  const I = escalar(vetInteresses(e.interesses));
+  const H = escalar(vetHabilidades(e.habil));
+  const V = escalar(vetValores(e.valores));
+  const P = IDS.map(function (_, i) {
+    return PESOS.interesses * I[i] + PESOS.habilidades * H[i] + PESOS.valores * V[i];
+  });
+  return { I: I, H: H, V: V, P: P };
+}
+/* Os 3 tipos mais fortes do perfil (código RIASEC da pessoa). Empate: ordem do hexágono. */
+function codigoRiasec(P) {
+  return DIMS.map(function (d, i) { return { d: d, v: P[i], i: i }; })
+    .sort(function (a, b) { return (b.v - a.v) || (a.i - b.i); })
+    .slice(0, 3);
+}
+function centrar(v) {
+  const m = v.reduce(function (a, b) { return a + b; }, 0) / v.length;
+  return v.map(function (x) { return x - m; });
+}
+function cosseno(a, b) {
+  let d = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  return (na < 1e-9 || nb < 1e-9) ? null : d / Math.sqrt(na * nb);
+}
+function classificar(P) {
+  const cp = centrar(P);
+  const uniforme = cosseno(cp, cp) === null;   // perfil totalmente "reto": nada se destaca
+  const pct = function (c) { return uniforme ? 50 : Math.round(Math.max(0, c) * 100); };
+  const porCurso = CURSOS.map(function (c) {
+    const cc = cosseno(cp, centrar(c.vet));
+    return { curso: c, c: cc === null ? 0 : cc, pct: 0 };
+  });
+  porCurso.forEach(function (x) { x.pct = pct(x.c); });
+  const lista = AREAS.map(function (a) {
+    const cursos = porCurso.filter(function (x) { return x.curso.area === a.id; }).sort(function (x, y) { return y.c - x.c; });
+    const melhores = cursos.slice(0, CURSOS_POR_AREA);
+    const m = melhores.reduce(function (s, x) { return s + x.c; }, 0) / Math.max(1, melhores.length);
+    a._cursoPcts = {}; cursos.forEach(function (x) { a._cursoPcts[x.curso.id] = x.pct; });
+    a._cursoRank = cursos.map(function (x) { return x.curso; });
+    return { area: a, c: m, pct: pct(m), cursos: cursos };
+  }).sort(function (x, y) { return y.c - x.c; });
+  return { lista: lista, uniforme: uniforme };
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { DIMS, AREAS, CURSOS, CURSOS_UTFPR, INTERESSES, HABILIDADES, VALORES, PESOS, PESOS_CODIGO, perfil, classificar, codigoRiasec };
+}
+
+/* =====================================================================
+   INTERFACE  —  telas, navegação e resultado visual
+   ===================================================================== */
+(function () {
+  'use strict';
+
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+  const reduzir = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  const ALT_LOGO = 'Logo do curso de Ciência de Dados e Inteligência Artificial, UTFPR Campus Londrina';
+  const TIQUE = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5l2.6 2.6L10 3.4" fill="none" stroke="#0F1B4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICONE_FAIXA = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 19v-6M10 19V8M15 19v-4M20 19V5" fill="none" stroke="#14298F" stroke-width="3" stroke-linecap="round"/></svg>';
+  const CHEVRON = '<svg class="chev" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  const ROTULOS = ['Início', 'Interesses', 'Habilidades', 'Valores', 'Seus planos', 'Cálculo', 'Resultado'];
+  const MOMENTOS = [
+    ['medio', 'Estou no ensino médio'],
+    ['eja', 'Faço EJA ou supletivo'],
+    ['concluiu', 'Já terminei o ensino médio'],
+    ['trabalha', 'Estou trabalhando e quero estudar']
+  ];
+  const TEMPOS = [
+    ['rapido', 'Quero começar a trabalhar logo (curso técnico ou tecnólogo)'],
+    ['completo', 'Posso investir em uma graduação completa'],
+    ['indeciso', 'Ainda não sei']
+  ];
+  const MIN_INTERESSES = 3;
+  const MAX_VALORES = 3;
+
+  const estado = {
+    passo: 0,
+    interesses: new Set(), habil: {}, valores: new Set(),
+    momento: null, tempo: null,
+    res: null, timers: [],
+    ordem: sortear()
+  };
+
+  /* Ordem das perguntas: sorteada a cada teste e intercalando os 6 tipos RIASEC,
+     para nenhum tipo ficar sempre no topo (atenção) ou no fim (cansaço) da lista. */
+  function embaralha(l) {
+    const a = l.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  function intercalar(lista) {
+    const g = {};
+    embaralha(lista).forEach((it) => { const t = Object.keys(it.p)[0]; (g[t] = g[t] || []).push(it.id); });
+    const out = []; let resta = true;
+    while (resta) {
+      resta = false;
+      embaralha(Object.keys(g)).forEach((t) => { if (g[t].length) { out.push(g[t].shift()); resta = true; } });
+    }
+    return out;
+  }
+  function sortear() { return { int: intercalar(INTERESSES), hab: intercalar(HABILIDADES), val: intercalar(VALORES) }; }
+  const ordenados = (lista, ordem) => ordem.map((id) => lista.filter((x) => x.id === id)[0]);
+
+  const view = $('#tela');
+  const dock = $('#dock');
+  const folha = $('#folha');
+  let histOk = false;
+
+  const logo = (cls) => `<img class="${cls}" src="${LOGO_URI}" alt="${ALT_LOGO}">`;
+  const pctTxt = (n) => n + '%';
+  const nomesTipos = (cod) => cod.split('').map((l) => DIMS.filter((d) => d.id === l)[0].nome).join(', ');
+  const dec = (n) => n.toFixed(2).replace('.', ',');
+
+  const origem = () => `
+    <div class="origem">
+      ${logo('logo-origem')}
+      <p>Projeto de extensão do curso de <b>Ciência de Dados e Inteligência Artificial</b>, UTFPR (Universidade Tecnológica Federal do Paraná), Campus Londrina.</p>
+    </div>`;
+
+  /* ---------------------------- TELAS ---------------------------- */
+
+  function telaCapa() {
+    return `
+      <section class="capa">
+        ${logo('logo-capa')}
+        <h1>Árvore de Decisão</h1>
+        <p class="lead">Descubra em poucos minutos quais áreas de estudo combinam com o seu jeito. São 4 etapas rápidas, sem resposta certa ou errada.</p>
+        <ul class="fatos">
+          <li><span class="tique">${TIQUE}</span>Funciona sem internet</li>
+          <li><span class="tique">${TIQUE}</span>Suas respostas ficam só neste aparelho</li>
+          <li><span class="tique">${TIQUE}</span>Baseado no modelo RIASEC, muito usado em orientação profissional</li>
+          <li><span class="tique">${TIQUE}</span>Não é teste psicológico: é um ponto de partida para pensar e pesquisar</li>
+        </ul>
+        ${origem()}
+      </section>`;
+  }
+
+  function telaInteresses() {
+    const pills = ordenados(INTERESSES, estado.ordem.int).map((it) => `
+      <button type="button" class="pill" data-act="int" data-id="${it.id}" aria-pressed="${estado.interesses.has(it.id)}">
+        <span class="tique">${TIQUE}</span><span>${esc(it.t)}</span>
+      </button>`).join('');
+    return `
+      <p class="etapa">Etapa 1 de 4</p>
+      <h1 class="t-passo">Do que você gosta?</h1>
+      <p class="lead">Toque em tudo que combina com você. Marque pelo menos ${MIN_INTERESSES}.</p>
+      <p class="contador" id="cont" role="status"></p>
+      <div class="pills">${pills}</div>`;
+  }
+  function telaHabilidades() {
+    const itens = ordenados(HABILIDADES, estado.ordem.hab).map((it) => {
+      const v = estado.habil[it.id] || 0;
+      const botoes = [1, 2, 3, 4, 5].map((n) => `
+        <button type="button" role="radio" aria-checked="${v === n}" data-act="nota" data-id="${it.id}" data-n="${n}" aria-label="${n} de 5">${n}</button>`).join('');
+      return `
+        <div class="item${v ? ' ok' : ''}" data-item="${it.id}">
+          <p id="q-${it.id}">${esc(it.t)}</p>
+          <div class="escala" role="radiogroup" aria-labelledby="q-${it.id}">${botoes}</div>
+          <div class="pontas" aria-hidden="true"><span>Nada a ver comigo</span><span>Tudo a ver comigo</span></div>
+        </div>`;
+    }).join('');
+    return `
+      <p class="etapa">Etapa 2 de 4</p>
+      <h1 class="t-passo">Como você se vê?</h1>
+      <p class="lead">Dê uma nota de 1 a 5 para cada frase.</p>
+      <p class="contador" id="cont" role="status"></p>
+      ${itens}`;
+  }
+
+  function telaValores() {
+    const pills = ordenados(VALORES, estado.ordem.val).map((it) => `
+      <button type="button" class="pill" data-act="val" data-id="${it.id}" aria-pressed="${estado.valores.has(it.id)}">
+        <span class="tique">${TIQUE}</span><span>${esc(it.t)}</span>
+      </button>`).join('');
+    return `
+      <p class="etapa">Etapa 3 de 4</p>
+      <h1 class="t-passo">O que é importante para você?</h1>
+      <p class="lead">Escolha até ${MAX_VALORES} coisas que você gostaria de ter no seu futuro trabalho.</p>
+      <p class="contador" id="cont" role="status"></p>
+      <div class="pills">${pills}</div>`;
+  }
+
+  function grupoOpcoes(nome, lista, atual, rotulo) {
+    const ops = lista.map((o) => `
+      <button type="button" class="pill larga" role="radio" aria-checked="${atual === o[0]}" data-act="${nome}" data-id="${o[0]}">
+        <span class="tique">${TIQUE}</span><span>${esc(o[1])}</span>
+      </button>`).join('');
+    return `<h2 class="sub" id="g-${nome}">${rotulo}</h2><div class="pills col" role="radiogroup" aria-labelledby="g-${nome}">${ops}</div>`;
+  }
+
+  function telaPlanos() {
+    return `
+      <p class="etapa">Etapa 4 de 4</p>
+      <h1 class="t-passo">Sobre os seus planos</h1>
+      <p class="lead">Estas respostas não mudam a pontuação, só ajudam a personalizar as sugestões. Você pode pular.</p>
+      ${grupoOpcoes('momento', MOMENTOS, estado.momento, 'Em que momento você está?')}
+      ${grupoOpcoes('tempo', TEMPOS, estado.tempo, 'Como você pensa em estudar?')}`;
+  }
+
+  function telaCalculo() {
+    return `
+      <section class="carregando" aria-live="polite">
+        <div class="gr" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <h1 class="t-passo">Montando o seu perfil</h1>
+        <p class="lead" id="passoCalc">Transformando suas respostas em números…</p>
+      </section>`;
+  }
+
+  /* --- gráfico radar (SVG) --- */
+  function radar(valores, vetArea, rotuloAlt) {
+    const cx = 200, cy = 170, R = 100, n = DIMS.length;
+    const ang = (i) => (-90 + i * (360 / n)) * Math.PI / 180;
+    const pt = (i, v) => [cx + Math.cos(ang(i)) * R * v, cy + Math.sin(ang(i)) * R * v];
+    const poly = (vals) => vals.map((v, i) => pt(i, v).map((x) => x.toFixed(1)).join(',')).join(' ');
+    const aneis = [0.25, 0.5, 0.75, 1].map((k) => `<polygon class="anel" points="${poly(DIMS.map(() => k))}"/>`).join('');
+    const eixos = DIMS.map((_, i) => { const p = pt(i, 1); return `<line class="eixo" x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}"/>`; }).join('');
+    const rotulos = DIMS.map((d, i) => {
+      const c = Math.cos(ang(i)), s = Math.sin(ang(i));
+      const x = cx + c * (R + 14), y = cy + s * (R + 14) + 4.5;
+      const ancora = c > 0.3 ? 'start' : (c < -0.3 ? 'end' : 'middle');
+      return `<text class="rot-radar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${ancora}">${esc(d.curto)}</text>`;
+    }).join('');
+    const pontos = valores.map((v, i) => { const p = pt(i, v); return `<circle class="ponto" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4"/>`; }).join('');
+    return `
+      <svg class="radar" viewBox="0 0 400 340" role="img" aria-label="${esc(rotuloAlt)}">
+        ${aneis}${eixos}
+        <polygon class="poly-area" points="${poly(vetArea)}"/>
+        <polygon class="poly-voce" points="${poly(valores)}"/>
+        ${pontos}${rotulos}
+      </svg>`;
+  }
+
+  const tagLocal = (c) => `<span class="curso local">${esc(c.nome)}<span class="turno">${esc(c.turno)}</span></span>`;
+
+  function tagCurso(a, c) {
+    const pct = a._cursoPcts && a._cursoPcts[c.id] != null ? a._cursoPcts[c.id] : null;
+    const local = c.tipo === 'utfpr';
+    const turno = local && CURSOS_UTFPR[c.utfpr] ? `<span class="turno">${esc(CURSOS_UTFPR[c.utfpr].turno)}</span>` : '';
+    const afin = pct != null ? `<span class="afin">${pct}%</span>` : '';
+    return `<span class="curso${local ? ' local' : ''}">${esc(c.nome)}${turno}${afin}</span>`;
+  }
+
+  function blocoCursos(a) {
+    const rank = a._cursoRank || a.cursos;
+    const locais = rank.filter((c) => c.tipo === 'utfpr');
+    const grad = rank.filter((c) => c.tipo === 'grad');
+    const rap = rank.filter((c) => c.tipo === 'rapido');
+    const bloco = (tit, l) => (l.length ? `<p class="rot">${tit}</p><div class="cursos">${l.map((c) => tagCurso(a, c)).join('')}</div>` : '');
+    const ordem = estado.tempo === 'rapido'
+      ? bloco('Formação técnica e tecnológica', rap) + bloco('Graduação', grad)
+      : bloco('Graduação', grad) + bloco('Formação técnica e tecnológica', rap);
+    return bloco('No Campus Londrina da UTFPR', locais) + ordem +
+      '<p class="nota">Cursos em ordem de afinidade com o seu perfil. O percentual é um índice de afinidade, não uma probabilidade de sucesso, e a oferta varia em cada instituição.</p>';
+  }
+
+  function proximosPassos() {
+    const extra = {
+      medio: 'Você ainda está no ensino médio: use esse tempo para experimentar. Projetos, oficinas e cursos livres ajudam a testar seus interesses.',
+      eja: 'Na EJA você já pode se planejar: compare as formas de ingresso e as opções de cursos técnicos e superiores.',
+      concluiu: 'Você já terminou o ensino médio: compare cursos técnicos e superiores e fique de olho nos calendários de inscrição.',
+      trabalha: 'Como você trabalha, pesquise turnos e modalidades (noturno, semipresencial, a distância) que caibam na sua rotina.'
+    }[estado.momento];
+    const passos = [
+      'Converse com quem vive a área: estudantes, professores e profissionais. Perguntar como é o dia a dia vale mais que qualquer teste.',
+      'Conheça os cursos de perto: visite universidades, feiras de profissões e eventos abertos ao público.',
+      'Pesquise como entrar e como se manter: formas de ingresso (ENEM/Sisu e outros processos), duração e assistência estudantil.'
+    ];
+    if (extra) passos.unshift(extra);
+    return passos.map((p) => `<li><span class="tique">${TIQUE}</span><span>${esc(p)}</span></li>`).join('');
+  }
+
+  /* --- QR code: resumo do resultado em texto puro (lido offline pela câmera) --- */
+  function semAcento(s) {
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) { /* sem normalize */ }
+    return s.replace(/[^\x20-\x7E\n]/g, '');   // só ASCII: todo leitor de QR mostra igual
+  }
+  function resumoQR() {
+    const r = estado.res;
+    const top3 = r.rank.lista.slice(0, 3);
+    const tres = codigoRiasec(r.P);
+    const linhas = ['Árvore de Decisão - UTFPR Londrina', 'Resultado de ' + new Date().toLocaleDateString('pt-BR'), 'Áreas com mais afinidade:']
+      .concat(top3.map((x, i) => (i + 1) + ') ' + x.area.nome + ' ' + x.pct + '%'))
+      .concat(['Código RIASEC: ' + tres.map((x) => x.d.id).join('') + ' (' + tres.map((x) => x.d.nome).join(', ') + ')', 'Sugestão para pesquisar, não diagnóstico.']);
+    return semAcento(linhas.join('\n'));
+  }
+  function cartaoQR() {
+    let txt, img;
+    try {
+      txt = resumoQR();
+      img = QR.svg(QR.criar(txt, 'M'), 4);
+    } catch (e) { return ''; }   // se algo falhar, o resto do resultado continua normal
+    return `
+      <section class="cartao qr-cartao">
+        <h2>Leve seu resultado</h2>
+        <div class="qr-img" role="img" aria-label="QR code com o resumo do seu resultado">${img}</div>
+        <p>Aponte a câmera do celular para o código. O resumo do seu resultado aparece em texto, mesmo sem internet.</p>
+        <details class="qr-texto"><summary>Ver o texto que está no código</summary><pre>${esc(txt)}</pre></details>
+        <p class="nota">O código guarda só o resumo, sem nome e sem e-mail.</p>
+      </section>`;
+  }
+
+  function telaResultado() {
+    const r = estado.res;
+    const lista = r.rank.lista;
+    const top = lista[0];
+    const A = top.area;
+    const mx = Math.max.apply(null, r.P);
+    const mn = Math.min.apply(null, r.P);
+    const rel = r.P.map((v) => (mx > 0 ? v / mx : 0));
+    const mxA = Math.max.apply(null, A.v);
+    const relA = A.v.map((v) => (mxA > 0 ? v / mxA : 0));
+    const equilibrado = r.rank.uniforme || (mx - mn) < 0.3;
+
+    const tres = codigoRiasec(r.P);
+    const codigo = tres.map((x) => x.d.id).join('');
+    const tambem = lista.slice(1, 3).filter((x) => x.pct >= 30);
+    const tambemTxt = tambem.length
+      ? `<p class="tambem">Também combinam com o seu perfil: ${tambem.map((x) => `<b>${esc(x.area.nome)}</b> (${pctTxt(x.pct)})`).join(' e ')}.</p>` : '';
+
+    const cursoTop = lista[0].cursos[0];
+    const locaisTop = lista[0].cursos.filter((x) => x.curso.tipo === 'utfpr');
+    const tagHero = (x) => {
+      const local = x.curso.tipo === 'utfpr' && CURSOS_UTFPR[x.curso.utfpr];
+      return `<span class="curso${local ? ' local' : ''}">${esc(x.curso.nome)}${local ? `<span class="turno">${esc(CURSOS_UTFPR[x.curso.utfpr].turno)}</span>` : ''}<span class="afin">${x.pct}%</span></span>`;
+    };
+    const blocoTopo = (tit, l) => `<div class="hero-utfpr"><p class="hero-rot">${tit}</p><div class="cursos">${l.map(tagHero).join('')}</div></div>`;
+    const destaqueUtfpr = (cursoTop.curso.tipo === 'utfpr' ? '' : blocoTopo('Curso com maior afinidade nesta área', [cursoTop])) +
+      (locaisTop.length
+        ? blocoTopo('Na UTFPR Londrina você pode cursar', locaisTop)
+        : '<p class="hero-sem">Esta área não tem curso de graduação na UTFPR Londrina. Veja exemplos de outras instituições mais abaixo.</p>');
+
+    const altRadar = 'Gráfico de radar do seu perfil. ' + DIMS.map((d, i) => d.nome + ' ' + Math.round(rel[i] * 100) + '%').join(', ') + '.';
+
+    const linhas = lista.map((x, i) => `
+      <details class="area${i < 3 ? ' top' : ''}"${i === 0 ? ' open' : ''}>
+        <summary>
+          <span class="area-nome">${esc(x.area.nome)}${x.area.cursosUtfpr.length ? '<span class="selo">UTFPR</span>' : ''}${CHEVRON}</span>
+          <span class="area-pct">${pctTxt(x.pct)}</span>
+          <span class="area-barra"><i style="width:${Math.max(x.pct, 2)}%"></i></span>
+        </summary>
+        <div class="area-det">
+          <p>${esc(x.area.desc)}</p>
+          <p class="nota">Perfil RIASEC médio dos cursos da área: <b>${x.area.codigo}</b> (${esc(nomesTipos(x.area.codigo))}).</p>
+          ${x.pct < 20 ? '<p class="nota">Esta área combina pouco com o seu perfil de hoje.</p>' : ''}
+          ${blocoCursos(x.area)}
+        </div>
+      </details>`).join('');
+
+    return `
+      <section class="hero">
+        <p class="peq">Sua maior afinidade é com</p>
+        <h1>${esc(A.nome)}</h1>
+        <p>${esc(A.desc)}</p>
+        <div class="medidor" role="img" aria-label="Afinidade de ${top.pct} por cento"><i style="width:${Math.max(top.pct, 2)}%"></i></div>
+        <div class="medidor-txt"><span>Afinidade com o seu perfil</span><b>${pctTxt(top.pct)}</b></div>
+        ${destaqueUtfpr}
+        ${tambemTxt}
+      </section>
+      ${equilibrado ? '<div class="aviso">Suas respostas ficaram bem parecidas em todos os tipos, então foi difícil separar as áreas. O ranking abaixo ainda serve de ponto de partida, mas vale refazer marcando só o que mais combina com você.</div>' : ''}
+      <section class="cartao">
+        <h2>O formato do seu perfil</h2>
+        ${radar(rel, relA, altRadar)}
+        <div class="legenda">
+          <span><i class="chave voce"></i>Você</span>
+          <span><i class="chave area"></i>Perfil típico de ${esc(A.nome)}</span>
+        </div>
+        <p class="nota">Cada ponta é um dos 6 tipos do modelo RIASEC. Quanto mais longe do centro, mais forte é o tipo em você, em relação ao seu ponto mais alto.</p>
+        <p><b>Seu código RIASEC: ${codigo}</b></p>
+        <ul class="tipos">${tres.map((x) => `<li><b>${esc(x.d.nome)} (${x.d.id}):</b> ${esc(x.d.desc)}.</li>`).join('')}</ul>
+      </section>
+      <section class="cartao">
+        <h2>Áreas e cursos em ordem de afinidade</h2>
+        <p class="nota">Toque em uma área para ver os cursos. O selo UTFPR marca áreas com curso no Campus Londrina; esses cursos aparecem em dourado, com o turno. Percentuais baixos não significam que você não serve para a área: só que o seu perfil de hoje é diferente do perfil típico dela.</p>
+        ${linhas}
+      </section>
+      <section class="cartao">
+        <h2>Próximos passos</h2>
+        <ul class="passos">${proximosPassos()}</ul>
+        <p class="nota">Este resultado é uma sugestão baseada só no que você respondeu. Não é diagnóstico nem teste psicológico e não substitui a conversa com um orientador educacional ou psicólogo. Interesses mudam: refaça quando quiser.</p>
+      </section>
+      ${cartaoQR()}
+      <div class="acoes-res">
+        <button type="button" class="btn-sec" data-act="imprimir">Imprimir ou salvar em PDF</button>
+        <button type="button" class="btn-primario" data-act="refazer">Refazer o teste</button>
+      </div>
+      ${origem()}`;
+  }
+
+  const TELAS = [telaCapa, telaInteresses, telaHabilidades, telaValores, telaPlanos, telaCalculo, telaResultado];
+
+  /* ------------------ FOLHA: Ciência de Dados e IA ------------------ */
+
+  function tabelaVetor() {
+    const P = estado.res.P;
+    const mx = Math.max.apply(null, P);
+    return '<table class="vet"><caption>Seu vetor de perfil (0 a 1, em relação ao seu ponto mais alto)</caption><tbody>' +
+      DIMS.map((d, i) => {
+        const v = mx > 0 ? P[i] / mx : 0;
+        return `<tr><th scope="row">${esc(d.nome)} (${d.id})</th><td><span class="mini"><i style="width:${Math.round(v * 100)}%"></i></span></td><td class="num">${dec(v)}</td></tr>`;
+      }).join('') + '</tbody></table>';
+  }
+
+  function conteudoFolha() {
+    const pc = PESOS_CODIGO.map((n) => String(n).replace('.', ','));
+    const pi = Math.round(PESOS.interesses * 100);
+    const ph = Math.round(PESOS.habilidades * 100);
+    const pv = Math.round(PESOS.valores * 100);
+    const vetor = estado.res
+      ? tabelaVetor()
+      : '<p class="nota">Ao terminar o teste, esta explicação passa a mostrar o seu próprio vetor de perfil.</p>';
+    return {
+      t: 'Do seu toque ao resultado',
+      h: `
+        <p>Um teste vocacional é um problema de dados: suas respostas viram números, os números são comparados com o perfil de várias áreas de estudo e o resultado volta em forma de gráfico. Coletar, organizar, analisar e mostrar é ciência de dados.</p>
+        <p>Este app nasceu no curso de Ciência de Dados e Inteligência Artificial da UTFPR e funciona sem internet: o cálculo acontece no seu aparelho e nada é enviado para lugar nenhum.</p>
+        <p>O modelo usado é o <b>RIASEC</b>, do psicólogo americano John Holland, muito usado em orientação profissional. Ele descreve os interesses em seis tipos: Realista, Investigativo, Artístico, Social, Empreendedor e Convencional. As perguntas do app são originais, e o resultado é uma leitura simples de interesses, não o teste oficial.</p>
+        <ol class="passos-dados">
+          <li>
+            <h4>Suas respostas viram números</h4>
+            <p>Cada item que você marca soma pontos principalmente em um dos ${DIMS.length} tipos do modelo e, em alguns casos, um pouco em outro, como a segunda letra de um código de Holland. Juntos, os ${DIMS.length} tipos formam o seu <b>vetor de perfil</b>: uma lista de números que descreve você. Os 3 tipos mais altos formam o seu <b>código RIASEC</b>, por exemplo IRC. Marcar mais itens não dá mais pontos: o que importa é o formato do perfil, não o tamanho dele.</p>
+            <div class="termo"><b>Termo de dados:</b> engenharia de atributos, ou seja, transformar respostas em números que um modelo consegue comparar.</div>
+          </li>
+          <li>
+            <h4>As notas de 1 a 5 são normalizadas</h4>
+            <p>Essa escala se chama escala Likert. Antes de somar, o app coloca tudo entre 0 e 1, para que perguntas diferentes possam ser comparadas de forma justa. Perguntar sobre o mesmo tema de jeitos diferentes também ajuda a reduzir erros de resposta.</p>
+            <div class="termo"><b>Termo de dados:</b> normalização.</div>
+          </li>
+          <li>
+            <h4>Seus valores ajustam os pesos</h4>
+            <p>Os valores que você escolhe dão um empurrãozinho no perfil, com peso menor que interesses e habilidades: ${pv}%, contra ${pi}% e ${ph}%. Quem projeta o modelo decide esses pesos, por isso eles precisam ser transparentes e revisados por especialistas.</p>
+            <div class="termo"><b>Termo de dados:</b> ponderação.</div>
+          </li>
+          <li>
+            <h4>Nem tudo entra na conta</h4>
+            <p>As respostas sobre os seus planos não mudam a pontuação, só personalizam as sugestões. Separar o que pontua do que só dá contexto é uma boa prática em projetos de dados. Também coletamos só o necessário, o que conversa com a LGPD, a lei de proteção de dados pessoais.</p>
+          </li>
+          <li>
+            <h4>Seu perfil é comparado com cada área</h4>
+            <p>Cada curso tem um código RIASEC de três letras, como ICR. O app transforma o código em números: a primeira letra vale ${pc[0]}, a segunda ${pc[1]} e a terceira ${pc[2]}. Esses códigos são aproximações, e a equipe do projeto os revisa com orientadores.</p>
+            <p>Seu vetor de perfil é comparado com o de cada área usando a <b>similaridade do cosseno</b>: uma conta que mede o quanto dois vetores apontam para a mesma direção. Antes, descontamos a média para comparar só o formato do perfil. O percentual é essa semelhança, a mesma ideia que sites de filmes e músicas usam para recomendar o que você pode gostar.</p>
+            <p>A nota de cada área é a média dos ${CURSOS_POR_AREA} cursos dela mais parecidos com você.</p>
+            ${vetor}
+          </li>
+          <li>
+            <h4>E a inteligência artificial?</h4>
+            <p>Este app usa um modelo transparente, montado por especialistas. Não é uma IA treinada. Com dados anonimizados e autorizados de muitos participantes, técnicas de aprendizado de máquina poderiam agrupar perfis parecidos, ajustar os pesos e medir se as recomendações realmente ajudam.</p>
+            <div class="termo"><b>Termo de dados:</b> árvore de decisão é uma técnica clássica de aprendizado de máquina que chega a uma resposta seguindo perguntas encadeadas, como os galhos de uma árvore. É o nome deste app, mas o cálculo aqui é outro: comparar perfis por similaridade. Com dados de muitos participantes, uma árvore de decisão poderia ser treinada para refinar as recomendações.</div>
+          </li>
+        </ol>
+        <div class="termo"><b>Todo modelo erra.</b> Por isso o resultado é uma sugestão para conversar e pesquisar, não um veredito.</div>`
+    };
+  }
+
+  function abrirFolha() {
+    const c = conteudoFolha();
+    $('#folhaTitulo2').textContent = c.t;
+    $('#folhaCorpo').innerHTML = c.h + origem();
+    document.body.style.overflow = 'hidden';
+    if (typeof folha.showModal === 'function') { folha.showModal(); } else { folha.setAttribute('open', ''); }
+    $('#folhaCorpo').scrollTop = 0;
+  }
+  function fecharFolha() {
+    if (typeof folha.close === 'function') { folha.close(); } else { folha.removeAttribute('open'); }
+    document.body.style.overflow = '';
+  }
+
+  /* ---------------------------- DOCK / TOPO ---------------------------- */
+
+  function medirDock() {
+    document.documentElement.style.setProperty('--dock-h', dock.offsetHeight + 'px');
+  }
+  function msg(texto) {
+    $('#msg').textContent = texto || '';
+    $('#msg').style.display = texto ? 'block' : 'none';
+    medirDock();
+  }
+  function atualizarTopo() {
+    const p = estado.passo;
+    const barras = document.querySelectorAll('#barras i');
+    barras.forEach((b, i) => {
+      b.className = '';
+      if (p >= 5 || (p >= 1 && i < p - 1)) { b.className = 'feito'; }
+      else if (p >= 1 && i === p - 1) { b.className = 'atual'; }
+    });
+    document.title = (p === 0 ? '' : ROTULOS[p] + ' - ') + 'Árvore de Decisão';
+  }
+  function atualizarDock() {
+    const p = estado.passo;
+    let h = '';
+    if (p === 0) {
+      h = '<button type="button" class="btn-primario" data-act="avancar">Começar</button>';
+    } else if (p >= 1 && p <= 4) {
+      h = '<button type="button" class="btn-sec" data-act="voltar">Voltar</button>' +
+          '<button type="button" class="btn-primario" data-act="avancar">' + (p === 4 ? 'Ver meu resultado' : 'Continuar') + '</button>';
+    }
+    const a = $('#acoes');
+    a.innerHTML = h;
+    a.style.display = h ? 'flex' : 'none';
+  }
+
+  /* ---------------------------- NAVEGAÇÃO ---------------------------- */
+
+  function limparTimers() { estado.timers.forEach(clearTimeout); estado.timers = []; }
+
+  function render() {
+    limparTimers();
+    view.innerHTML = TELAS[estado.passo]();
+    atualizarTopo();
+    atualizarDock();
+    msg('');
+    if (estado.passo === 1) atualizarContInt();
+    if (estado.passo === 2) atualizarContHab();
+    if (estado.passo === 3) atualizarContVal();
+    if (estado.passo === 5) iniciarCalculo();
+    window.scrollTo(0, 0);
+    try { view.focus({ preventScroll: true }); } catch (e) { /* sem foco */ }
+  }
+
+  function ir(p) {
+    estado.passo = p;
+    if (histOk) {
+      try { history.pushState({ p: p }, ''); } catch (e) { histOk = false; }
+    }
+    render();
+  }
+  function voltar() {
+    if (histOk) { history.back(); return; }
+    estado.passo = Math.max(0, estado.passo - 1);
+    render();
+  }
+
+  window.addEventListener('popstate', (e) => {
+    let p = (e.state && typeof e.state.p === 'number') ? e.state.p : 0;
+    if (p >= 5 && !estado.res) p = 4;
+    if (p === 5) p = 6;
+    estado.passo = p;
+    render();
+  });
+
+  function iniciarCalculo() {
+    const msgs = ['Transformando suas respostas em números…', 'Comparando com ' + AREAS.length + ' áreas de estudo…', 'Calculando a afinidade…'];
+    if (reduzir) { concluirCalculo(); return; }
+    const el = $('#passoCalc');
+    estado.timers = [
+      setTimeout(() => { el.textContent = msgs[1]; }, 700),
+      setTimeout(() => { el.textContent = msgs[2]; }, 1400),
+      setTimeout(concluirCalculo, 2100)
+    ];
+  }
+  function concluirCalculo() {
+    estado.passo = 6;
+    if (histOk) { try { history.replaceState({ p: 6 }, ''); } catch (e) { /* ignora */ } }
+    render();
+  }
+
+  function calcular() {
+    const pf = perfil(estado);
+    estado.res = { P: pf.P, rank: classificar(pf.P) };
+  }
+
+  function faltamHabilidades() {
+    return HABILIDADES.filter((h) => !estado.habil[h.id]).length;
+  }
+
+  function avancar() {
+    const p = estado.passo;
+    if (p === 1 && estado.interesses.size < MIN_INTERESSES) {
+      msg('Marque pelo menos ' + MIN_INTERESSES + ' itens para continuar.'); return;
+    }
+    if (p === 2) {
+      const f = faltamHabilidades();
+      if (f > 0) {
+        msg(f === 1 ? 'Falta 1 frase para responder.' : 'Faltam ' + f + ' frases para responder.');
+        const el = document.querySelector('.item:not(.ok)');
+        if (el) el.scrollIntoView({ behavior: reduzir ? 'auto' : 'smooth', block: 'center' });
+        return;
+      }
+    }
+    if (p === 3 && estado.valores.size < 1) {
+      msg('Escolha pelo menos 1 item para continuar.'); return;
+    }
+    if (p === 4) { calcular(); }
+    ir(p + 1);
+  }
+
+  function refazer() {
+    estado.interesses.clear();
+    estado.habil = {};
+    estado.valores.clear();
+    estado.momento = null;
+    estado.tempo = null;
+    estado.res = null;
+    estado.ordem = sortear();
+    ir(0);
+  }
+
+  /* ---------------------------- CONTADORES ---------------------------- */
+
+  function atualizarContInt() {
+    const n = estado.interesses.size;
+    $('#cont').textContent = n === 0 ? 'Nenhum item marcado' : (n === 1 ? '1 item marcado' : n + ' itens marcados');
+  }
+  function atualizarContHab() {
+    const n = HABILIDADES.length - faltamHabilidades();
+    $('#cont').textContent = n + ' de ' + HABILIDADES.length + ' respondidas';
+  }
+  function atualizarContVal() {
+    $('#cont').textContent = estado.valores.size + ' de ' + MAX_VALORES + ' escolhidos';
+  }
+
+  /* ---------------------------- EVENTOS ---------------------------- */
+
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const act = el.getAttribute('data-act');
+    const id = el.getAttribute('data-id');
+
+    if (act === 'avancar') { avancar(); return; }
+    if (act === 'voltar') { voltar(); return; }
+    if (act === 'refazer') { refazer(); return; }
+    if (act === 'imprimir') { window.print(); return; }
+
+    if (act === 'int') {
+      if (estado.interesses.has(id)) estado.interesses.delete(id); else estado.interesses.add(id);
+      el.setAttribute('aria-pressed', String(estado.interesses.has(id)));
+      atualizarContInt(); msg('');
+    } else if (act === 'val') {
+      if (estado.valores.has(id)) {
+        estado.valores.delete(id); msg('');
+      } else if (estado.valores.size >= MAX_VALORES) {
+        msg('Você já escolheu ' + MAX_VALORES + '. Toque em um deles para desmarcar.'); return;
+      } else {
+        estado.valores.add(id); msg('');
+      }
+      el.setAttribute('aria-pressed', String(estado.valores.has(id)));
+      atualizarContVal();
+    } else if (act === 'nota') {
+      const n = parseInt(el.getAttribute('data-n'), 10);
+      estado.habil[id] = n;
+      const cartao = el.closest('.item');
+      cartao.classList.add('ok');
+      cartao.querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b === el)));
+      atualizarContHab(); msg('');
+    } else if (act === 'momento' || act === 'tempo') {
+      estado[act] = (estado[act] === id) ? null : id;
+      el.parentNode.querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.getAttribute('data-id') === estado[act])));
+    }
+  });
+
+  $('#faixa').addEventListener('click', abrirFolha);
+  $('#folhaFechar').addEventListener('click', fecharFolha);
+  folha.addEventListener('click', (e) => { if (e.target === folha) fecharFolha(); });
+  folha.addEventListener('close', () => { document.body.style.overflow = ''; });
+  window.addEventListener('resize', medirDock);
+
+  window.addEventListener('beforeprint', () => {
+    document.querySelectorAll('details.area').forEach((d) => { d.setAttribute('data-was', d.open ? '1' : '0'); d.open = d.classList.contains('top'); });
+  });
+  window.addEventListener('afterprint', () => {
+    document.querySelectorAll('details.area').forEach((d) => { d.open = d.getAttribute('data-was') === '1'; });
+  });
+
+  /* ---------------------------- INÍCIO ---------------------------- */
+
+  document.querySelectorAll('img[data-logo]').forEach((i) => { i.src = LOGO_URI; });
+  try { history.replaceState({ p: 0 }, ''); histOk = true; } catch (e) { histOk = false; }
+  render();
+})();
+
+
+</script>
+</body>
+</html>
